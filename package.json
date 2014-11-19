@@ -1,10 +1,10 @@
 {
-  "name": "saddle",
+  "name": "k-saddle",
   "description": "A bindings engine for rendering HTML or creating DOM nodes directly",
-  "homepage": "https://github.com/codeparty/saddle",
+  "homepage": "https://github.com/kantele/k-saddle",
   "repository": {
     "type": "git",
-    "url": "https://github.com/codeparty/saddle"
+    "url": "https://github.com/kantele/k-saddle"
   },
   "version": "0.4.6",
   "main": "./lib/index.js",
