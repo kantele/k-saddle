@@ -15,7 +15,7 @@
 //   Expression::truthy(context)
 
 if (typeof require === 'function') {
-  var serializeObject = require('serialize-object');
+  var serializeObject = require('k-serialize-object');
 }
 
 module.exports = {

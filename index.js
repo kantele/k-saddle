@@ -1,5 +1,5 @@
 if (typeof require === 'function') {
-  var serializeObject = require('serialize-object');
+  var serializeObject = require('k-serialize-object');
 }
 
 // UPDATE_PROPERTIES map HTML attribute names to an Element DOM property that
