@@ -95,6 +95,21 @@ exports.NodeBinding = NodeBinding;
 exports.AttributeBinding = AttributeBinding;
 exports.RangeBinding = RangeBinding;
 
+// http://stackoverflow.com/questions/5375616/extjs4-ie9-object-doesnt-support-property-or-method-createcontextualfragme
+var createContextualFragment = (function(){
+  if (typeof document !== 'undefined') {
+    var doc = document.implementation.createHTMLDocument(''),
+        range = doc.createRange(),
+        body = doc.body;
+    return function(html){
+      body.innerHTML = html;
+      range.selectNodeContents(body);
+      return range.extractContents();
+    }
+  }
+  else return function () {}
+})();
+
 function Template(content) {
   this.content = content;
 }
@@ -408,7 +423,7 @@ function createHtmlFragment(parent, html) {
   if (parent && parent.nodeType === 1) {
     var range = document.createRange();
     range.selectNodeContents(parent);
-    return range.createContextualFragment(html);
+    return range.createContextualFragment && range.createContextualFragment(html) || createContextualFragment(html);
   }
   var div = document.createElement('div');
   var range = document.createRange();
