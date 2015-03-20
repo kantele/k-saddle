@@ -1146,17 +1146,11 @@ if (!Array.isArray) {
 
 // Equivalent to textNode.splitText, which is buggy in IE <=9
 function splitData(node, index) {
-  try {
-    var newNode = node.cloneNode(false);
-    newNode.deleteData(0, index);
-    node.deleteData(index, node.length - index);
-    node.parentNode.insertBefore(newNode, node.nextSibling || null);
-    return newNode;
-  }
-  catch (err) {
-    console.log(err);
-    return node;
-  }
+  var newNode = node.cloneNode(false);
+  newNode.deleteData(0, index);
+  node.deleteData(index, node.length - index);
+  node.parentNode.insertBefore(newNode, node.nextSibling || null);
+  return newNode;
 }
 
 // Defined so that it can be overriden in IE <=8
