@@ -588,7 +588,12 @@ Element.prototype.attachTo = function(parent, node, context) {
     // TODO: Ideally, this would also check that the node's current attributes
     // are equivalent, but there are some tricky edge cases
   }
-  if (this.content) attachContent(node, node.firstChild, this.content, context);
+
+  if (this.content) {
+    normalize(node);
+    attachContent(node, node.firstChild, this.content, context);
+  }
+
   return node.nextSibling;
 };
 Element.prototype.type = 'Element';
@@ -1141,11 +1146,17 @@ if (!Array.isArray) {
 
 // Equivalent to textNode.splitText, which is buggy in IE <=9
 function splitData(node, index) {
-  var newNode = node.cloneNode(false);
-  newNode.deleteData(0, index);
-  node.deleteData(index, node.length - index);
-  node.parentNode.insertBefore(newNode, node.nextSibling || null);
-  return newNode;
+  try {
+    var newNode = node.cloneNode(false);
+    newNode.deleteData(0, index);
+    node.deleteData(index, node.length - index);
+    node.parentNode.insertBefore(newNode, node.nextSibling || null);
+    return newNode;
+  }
+  catch (err) {
+    console.log(err);
+    return node;
+  }
 }
 
 // Defined so that it can be overriden in IE <=8
@@ -1155,6 +1166,36 @@ function setNodeProperty(node, key, value) {
 
 function normalizeLineBreaks(string) {
   return string;
+}
+
+function normalize(node) {
+  var shouldfix = false,
+      prev;
+
+  function normalizeIE(node) {
+    while (node.nodeType == 3 && node.nextSibling && node.nextSibling.nodeType == 3) {
+      node.nodeValue += node.nextSibling.nodeValue;
+      node.parentNode.removeChild(node.nextSibling);
+    }
+  }
+
+  node.normalize();
+
+  // should we do some more normalizing (work around ie bug)
+  if (node.childNodes && node.childNodes.length) {
+    for (var i = 0; i < node.childNodes.length; i++) {
+      if (prev && prev.nodeType === 3 && node.childNodes[i].nodeType === 3) {
+        shouldfix = prev;
+        break;
+      }
+
+      prev = node.childNodes[i];
+    }
+  }
+
+  if (shouldfix) {
+    normalizeIE(shouldfix);
+  }
 }
 
 (function() {
