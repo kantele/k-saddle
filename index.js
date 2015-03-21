@@ -423,7 +423,9 @@ function createHtmlFragment(parent, html) {
   if (parent && parent.nodeType === 1) {
     var range = document.createRange();
     range.selectNodeContents(parent);
-    return range.createContextualFragment && range.createContextualFragment(html) || createContextualFragment(html);
+    var f = range.createContextualFragment && range.createContextualFragment(html) || createContextualFragment(html);
+    normalize(f);
+    return f;
   }
   var div = document.createElement('div');
   var range = document.createRange();
