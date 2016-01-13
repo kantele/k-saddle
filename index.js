@@ -110,9 +110,13 @@ var createContextualFragment = (function(){
   else return function () {}
 })();
 
-function Template(content) {
+function Template(content, source) {
   this.content = content;
+  this.source = source;
 }
+Template.prototype.toString = function() {
+  return this.source;
+};
 Template.prototype.get = function(context, unescaped) {
   return contentHtml(this.content, context, unescaped);
 };
@@ -139,7 +143,7 @@ Template.prototype.stringify = function(value) {
 Template.prototype.module = 'templates';
 Template.prototype.type = 'Template';
 Template.prototype.serialize = function() {
-  return serializeObject.instance(this, this.content);
+  return serializeObject.instance(this, this.content, this.source);
 };
 
 
