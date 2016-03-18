@@ -1179,6 +1179,9 @@ if (!Array.isArray) {
 function splitData(node, index) {
   var newNode = node.cloneNode(false);
   newNode.deleteData(0, index);
+  if (index > node.length) {
+    throw attachError(node.parentNode, node);
+  }
   node.deleteData(index, node.length - index);
   node.parentNode.insertBefore(newNode, node.nextSibling || null);
   return newNode;
