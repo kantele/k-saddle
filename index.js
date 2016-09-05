@@ -251,6 +251,16 @@ function attachText(parent, node, data, template, context) {
     return;
   }
   if (node.nodeType === 3) {
+    // work-around for the first LF removal
+    // https://bugs.chromium.org/p/chromium/issues/detail?id=60484
+    // http://trac.webkit.org/changeset/82656
+    // 
+    // todo: rethink where/how to do this. Maybe add a double LF server side, 
+    // then of which the first gets removed.
+    if (data.charAt(0) === '\n' && node.data.charAt(0) === data.charAt(1)) {
+      node.data = '\n' + node.data;
+    }
+
     // Proceed if nodes already match
     if (node.data === data) {
       addNodeBinding(template, context, node);
