@@ -3,7 +3,7 @@ if (typeof require === 'function') {
 }
 
 // UPDATE_PROPERTIES map HTML attribute names to an Element DOM property that
-// should be used for setting on bindings updates instead of s'test'Attribute.
+// should be used for setting on bindings updates instead of setAttribute.
 //
 // https://github.com/jquery/jquery/blob/1.x-master/src/attributes/prop.js
 // https://github.com/jquery/jquery/blob/master/src/attributes/prop.js
@@ -203,6 +203,7 @@ Text.prototype.serialize = function() {
 
 function DynamicText(expression) {
   this.expression = expression;
+  this.unbound = false;
 }
 DynamicText.prototype = new Template();
 DynamicText.prototype.get = function(context, unescaped) {
@@ -355,7 +356,7 @@ function attachComment(parent, node, data, template, context) {
 }
 
 function addNodeBinding(template, context, node) {
-  if (template.expression) {
+  if (template.expression && !template.unbound) {
     context.addBinding(new NodeBinding(template, context, node));
   }
   emitHooks(template.hooks, context, node);
@@ -465,10 +466,10 @@ function Attribute(data, ns) {
   this.data = data;
   this.ns = ns;
 }
+Attribute.prototype = new Template();
 Attribute.prototype.get = Attribute.prototype.getBound = function(context) {
   return this.data;
 };
-Attribute.prototype.module = Template.prototype.module;
 Attribute.prototype.type = 'Attribute';
 Attribute.prototype.serialize = function() {
   return serializeObject.instance(this, this.data, this.ns);
@@ -494,8 +495,8 @@ DynamicAttribute.prototype.update = function(context, binding) {
   var element = binding.element;
   var propertyName = !this.elementNs && UPDATE_PROPERTIES[binding.name];
   if (propertyName) {
-    if (propertyName === 'value' && (element.value === value || element.valueAsNumber === value)) return;
-    if (value === void 0) value = null;
+    if (propertyName === 'value') value = this.stringify(value);
+    if (element[propertyName] === value) return;
     element[propertyName] = value;
     return;
   }
@@ -541,6 +542,7 @@ function Element(tagName, attributes, content, hooks, selfClosing, notClosed, ns
   this.startClose = getStartClose(selfClosing);
   var lowerTagName = tagName && tagName.toLowerCase();
   this.unescapedContent = (lowerTagName === 'script' || lowerTagName === 'style');
+  this.bindContentToValue = (lowerTagName === 'textarea');
 }
 Element.prototype = new Template();
 Element.prototype.getTagName = function() {
@@ -589,7 +591,10 @@ Element.prototype.appendTo = function(parent, context) {
       element.setAttribute(key, value);
     }
   }
-  if (this.content) appendContent(element, this.content, context);
+  if (this.content) {
+    this._bindContent(context, element);
+    appendContent(element, this.content, context);
+  }
   parent.appendChild(element);
   emitHooks(this.hooks, context, element);
 };
@@ -611,11 +616,23 @@ Element.prototype.attachTo = function(parent, node, context) {
 
   if (this.content) {
     normalize(node);
+    this._bindContent(context, node);
     attachContent(node, node.firstChild, this.content, context);
   }
 
   emitHooks(this.hooks, context, node);
   return node.nextSibling;
+};
+Element.prototype._bindContent = function(context, element) {
+  // For textareas with dynamic text content, bind to the value property
+  var child = this.bindContentToValue &&
+    this.content.length === 1 &&
+    this.content[0];
+  if (child instanceof DynamicText) {
+    child.unbound = true;
+    var template = new DynamicAttribute(child.expression);
+    context.addBinding(new AttributeBinding(template, context, element, 'value'));
+  }
 };
 Element.prototype.type = 'Element';
 Element.prototype.serialize = function() {
@@ -990,6 +1007,9 @@ function appendContent(parent, content, context) {
 }
 function attachContent(parent, node, content, context) {
   for (var i = 0, len = content.length; i < len; i++) {
+    while (node && node.hasAttribute && node.hasAttribute('data-no-attach')) {
+      node = node.nextSibling;
+    }
     node = content[i].attachTo(parent, node, context);
   }
   return node;
